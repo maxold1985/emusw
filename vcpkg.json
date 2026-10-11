@@ -25,13 +25,16 @@
         "fmt",
         "lz4",
         "nlohmann-json",
+        "sdl2",
         "zlib",
         "zstd"
     ],
     "features": {
         "yuzu-tests": {
             "description": "Compile tests",
-            "dependencies": [ "catch2" ]
+            "dependencies": [
+                "catch2"
+            ]
         },
         "web-service": {
             "description": "Enable web services (telemetry, etc.)",
