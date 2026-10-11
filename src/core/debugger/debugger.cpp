@@ -6,7 +6,15 @@
 #include <thread>
 
 #include <boost/asio.hpp>
+#if __has_include(<boost/process/v1/async_pipe.hpp>)
+#include <boost/process/v1/async_pipe.hpp>
+namespace debugger_boost_process = boost::process::v1;
+#elif __has_include(<boost/process/async_pipe.hpp>)
 #include <boost/process/async_pipe.hpp>
+namespace debugger_boost_process = boost::process;
+#else
+#error "Boost.Process async_pipe header not found; install Boost.Process V1 compatibility headers"
+#endif
 
 #include "common/logging/log.h"
 #include "common/polyfill_thread.h"
@@ -326,7 +334,7 @@ private:
 
     struct ConnectionState {
         boost::asio::ip::tcp::socket client_socket;
-        boost::process::async_pipe signal_pipe;
+        debugger_boost_process::async_pipe signal_pipe;
 
         SignalInfo info;
         Kernel::KScopedAutoObject<Kernel::KThread> active_thread;
