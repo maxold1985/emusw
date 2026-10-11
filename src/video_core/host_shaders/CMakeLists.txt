@@ -99,7 +99,7 @@ execute_process(
 )
 
 if (NOT GLSLANG_ERROR STREQUAL "")
-    message(WARNING "Refusing to use unavailable flag `${QUIET_FLAG}` on `${GLSLANGVALIDATOR}`")
+    message(STATUS "glslangValidator does not support `${QUIET_FLAG}`; compiling shaders without it")
     set(QUIET_FLAG "")
 endif()
 
