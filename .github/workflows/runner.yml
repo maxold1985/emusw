@@ -61,6 +61,25 @@ jobs:
           # Do not create a fake NASM ZIP. Chocolatey installs the real executable.
           # The obsolete optional NASM download in CMake may emit a warning.
 
+      - name: Install pkg-config for vcpkg
+        shell: pwsh
+        run: |
+          choco install pkgconfiglite -y --no-progress
+          if ($LASTEXITCODE -ne 0) { throw "pkgconfiglite installation failed" }
+          $candidatePaths = @(
+            "C:\\ProgramData\\chocolatey\\bin\\pkg-config.exe",
+            "C:\\ProgramData\\chocolatey\\lib\\pkgconfiglite\\tools\\pkg-config.exe"
+          )
+          $pkgConfig = $candidatePaths | Where-Object { Test-Path $_ } | Select-Object -First 1
+          if (-not $pkgConfig) {
+            $pkgConfig = Get-ChildItem "C:\\ProgramData\\chocolatey\\lib\\pkgconfiglite" -Recurse -Filter pkg-config.exe -ErrorAction SilentlyContinue |
+              Select-Object -First 1 -ExpandProperty FullName
+          }
+          if (-not $pkgConfig) { throw "pkg-config.exe not found after installation" }
+          & $pkgConfig --version
+          if ($LASTEXITCODE -ne 0) { throw "pkg-config is not executable" }
+          "PKG_CONFIG=$pkgConfig" >> $env:GITHUB_ENV
+
       - name: Configure CMake
         shell: pwsh
         run: |
