@@ -43,6 +43,7 @@ jobs:
             "externals/mbedtls",
             "externals/libusb/libusb",
             "externals/discord-rpc",
+            "externals/SDL",
             "externals/nx_tzdb/tzdb_to_nx"
           )
           git -C "$env:RUNNER_TEMP/yuzu-source" config -f .gitmodules submodule.sirit.url https://github.com/ReinUsesLisp/sirit.git
