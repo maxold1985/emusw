@@ -117,7 +117,7 @@ jobs:
           $nasmDir >> $env:GITHUB_PATH
           & $nasmExe -v
           git clone https://github.com/microsoft/vcpkg.git externals/vcpkg
-          git -C externals/vcpkg checkout a42af01b72c28a8e1d7b48107b33e4f286a55ef6
+          git -C externals/vcpkg checkout e456309491fd875487bf02b8a0dca76c1b1b00cc
           & .\\externals\\vcpkg\\bootstrap-vcpkg.bat -disableMetrics
           if ($LASTEXITCODE -ne 0) { throw "vcpkg bootstrap failed" }
           New-Item -ItemType Directory -Force .vcpkg-binary-cache | Out-Null
@@ -151,10 +151,10 @@ jobs:
         run: |
           & .\\externals\\vcpkg\\vcpkg.exe install --triplet x64-windows
           if ($LASTEXITCODE -ne 0) { throw "FFmpeg installation failed" }
-          $ffmpegInclude = Join-Path (Get-Location) "externals/vcpkg/installed/x64-windows/include"
+          $ffmpegInclude = Join-Path (Get-Location) "vcpkg_installed/x64-windows/include"
           if (!(Test-Path (Join-Path $ffmpegInclude "libavcodec/avcodec.h"))) { throw "FFmpeg avcodec header missing" }
           if (!(Test-Path (Join-Path $ffmpegInclude "libswscale/swscale.h"))) { throw "FFmpeg swscale header missing" }
-          "FFMPEG_DIR=$(Join-Path (Get-Location) 'externals/vcpkg/installed/x64-windows')" >> $env:GITHUB_ENV
+          "FFMPEG_DIR=$(Join-Path (Get-Location) 'vcpkg_installed/x64-windows')" >> $env:GITHUB_ENV
 
       - name: Restore incremental CMake build cache
         uses: actions/cache/restore@v4
