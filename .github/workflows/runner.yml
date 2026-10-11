@@ -56,7 +56,7 @@ jobs:
               if ($LASTEXITCODE -ne 0) { throw "Unable to restore cubeb sanitizers-cmake nested submodule" }
               if (!(Test-Path "$env:RUNNER_TEMP/yuzu-source/$module/cmake/sanitizers-cmake/cmake/FindSanitizers.cmake")) { throw "cubeb FindSanitizers.cmake missing after nested submodule checkout" }
             }
-            if (!(Test-Path "$env:RUNNER_TEMP/yuzu-source/$module/CMakeLists.txt") -and $module -notmatch 'simpleini|xbyak|tzdb_to_nx') {
+            if (!(Test-Path "$env:RUNNER_TEMP/yuzu-source/$module/CMakeLists.txt") -and $module -notmatch 'simpleini|xbyak|tzdb_to_nx|libusb/libusb') {
               throw "Submodule missing CMakeLists.txt: $module"
             }
             New-Item -ItemType Directory -Force (Split-Path $module -Parent) | Out-Null
