@@ -41,6 +41,7 @@ jobs:
             "externals/xbyak",
             "externals/dynarmic",
             "externals/mbedtls",
+            "externals/libusb/libusb",
             "externals/nx_tzdb/tzdb_to_nx"
           )
           git -C "$env:RUNNER_TEMP/yuzu-source" config -f .gitmodules submodule.sirit.url https://github.com/ReinUsesLisp/sirit.git
