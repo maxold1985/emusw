@@ -23,6 +23,51 @@ jobs:
         with:
           submodules: recursive
 
+      - name: Restore missing external source dependencies
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          git clone --depth 1 https://github.com/SnowZucc/yuzu-archive.git "$env:RUNNER_TEMP/yuzu-source"
+          if ($LASTEXITCODE -ne 0) { throw "Failed to obtain original submodule manifest" }
+          $modules = @(
+            "externals/enet",
+            "externals/cubeb",
+            "externals/sirit",
+            "externals/opus",
+            "externals/Vulkan-Headers",
+            "externals/Vulkan-Utility-Libraries",
+            "externals/VulkanMemoryAllocator",
+            "externals/simpleini",
+            "externals/xbyak",
+            "externals/dynarmic",
+            "externals/mbedtls",
+            "externals/nx_tzdb/tzdb_to_nx"
+          )
+          foreach ($module in $modules) {
+            git -C "$env:RUNNER_TEMP/yuzu-source" submodule update --init --depth 1 -- $module
+            if ($LASTEXITCODE -ne 0) { throw "Unable to restore $module from archived submodule revision" }
+            if (!(Test-Path "$env:RUNNER_TEMP/yuzu-source/$module/CMakeLists.txt") -and $module -notmatch 'simpleini|xbyak|tzdb_to_nx') {
+              throw "Submodule missing CMakeLists.txt: $module"
+            }
+            New-Item -ItemType Directory -Force (Split-Path $module -Parent) | Out-Null
+            Copy-Item "$env:RUNNER_TEMP/yuzu-source/$module" -Destination $module -Recurse -Force
+          }
+
+      - name: Install glslangValidator
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $archive = Join-Path $env:RUNNER_TEMP "glslang.zip"
+          $folder = Join-Path $env:RUNNER_TEMP "glslang-tools"
+          Invoke-WebRequest "https://github.com/KhronosGroup/glslang/releases/download/master-tot/glslang-master-windows-Release.zip" -OutFile $archive
+          Expand-Archive $archive -DestinationPath $folder -Force
+          $validator = Get-ChildItem $folder -Filter glslangValidator.exe -Recurse -File | Select-Object -First 1 -ExpandProperty FullName
+          if (-not $validator) { throw "glslangValidator.exe missing from release archive" }
+          $validatorDir = Split-Path $validator -Parent
+          $validatorDir >> $env:GITHUB_PATH
+          & $validator --version
+          if ($LASTEXITCODE -ne 0) { throw "glslangValidator execution failed" }
+
       - name: Set up MSVC
         uses: ilammy/msvc-dev-cmd@v1
         with:
