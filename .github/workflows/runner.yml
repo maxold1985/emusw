@@ -163,7 +163,6 @@ jobs:
           host: windows
           target: desktop
           arch: win64_msvc2019_64
-          modules: 'qtmultimedia'
           cache: true
 
       - name: Restore incremental CMake build cache
@@ -181,6 +180,7 @@ jobs:
             -DENABLE_QT=ON `
             -DENABLE_QT6=OFF `
             -DYUZU_USE_BUNDLED_QT=OFF `
+            -DYUZU_USE_QT_MULTIMEDIA=OFF `
             -DCMAKE_PREFIX_PATH="$env:Qt5_DIR/../../.." `
             -DENABLE_SDL2=ON `
             -DYUZU_USE_BUNDLED_SDL2=OFF `
