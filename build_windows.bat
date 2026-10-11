@@ -5,7 +5,7 @@ set "ROOT=%CD%"
 set "VCPKG_ROOT=%ROOT%\externals\vcpkg"
 set "VCPKG_BINARY_SOURCES=clear;files,%ROOT%\.vcpkg-binary-cache,readwrite"
 set "VCPKG_KEEP_ENV_VARS=PKG_CONFIG"
-set "FFMPEG_DIR=%VCPKG_ROOT%\installed\x64-windows"
+set "FFMPEG_DIR=%ROOT%\vcpkg_installed\x64-windows"
 set "JOBS=2"
 if not "%~1"=="" set "JOBS=%~1"
 
@@ -47,7 +47,7 @@ if not exist "%VCPKG_ROOT%\vcpkg.exe" (
       exit /b 1
     )
     git clone https://github.com/microsoft/vcpkg.git "%VCPKG_ROOT%" || exit /b 1
-    git -C "%VCPKG_ROOT%" checkout a42af01b72c28a8e1d7b48107b33e4f286a55ef6 || exit /b 1
+    git -C "%VCPKG_ROOT%" checkout e456309491fd875487bf02b8a0dca76c1b1b00cc || exit /b 1
   )
   call "%VCPKG_ROOT%\bootstrap-vcpkg.bat" -disableMetrics || exit /b 1
 )
@@ -63,6 +63,8 @@ if not exist "externals\sirit\externals\SPIRV-Headers\CMakeLists.txt" (
   if errorlevel 1 exit /b 1
 )
 
+git -C "%VCPKG_ROOT%" fetch origin e456309491fd875487bf02b8a0dca76c1b1b00cc || exit /b 1
+  git -C "%VCPKG_ROOT%" checkout e456309491fd875487bf02b8a0dca76c1b1b00cc || exit /b 1
 if not exist ".vcpkg-binary-cache" mkdir ".vcpkg-binary-cache"
 echo [1/3] Instalando dependencias vcpkg do manifesto...
 "%VCPKG_ROOT%\vcpkg.exe" install --triplet x64-windows || exit /b 1
