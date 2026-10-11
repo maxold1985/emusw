@@ -1,4 +1,4 @@
-name: Build emusw (Linux)
+name: Build emusw Windows
 
 on:
   push:
@@ -11,59 +11,57 @@ permissions:
   contents: read
 
 jobs:
-  build-linux:
-    runs-on: ubuntu-24.04
-    timeout-minutes: 120
+  build-windows:
+    runs-on: windows-2022
+    timeout-minutes: 180
+    env:
+      VCPKG_BINARY_SOURCES: "clear;x-gha,readwrite"
     steps:
       - name: Checkout source
         uses: actions/checkout@v4
         with:
           submodules: recursive
 
-      - name: Install build dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends \
-            build-essential cmake ninja-build git pkg-config \
-            clang lld nasm autoconf automake libtool \
-            libboost-all-dev libfmt-dev liblz4-dev libzstd-dev \
-            nlohmann-json3-dev zlib1g-dev libssl-dev \
-            libusb-1.0-0-dev libudev-dev libpulse-dev \
-            libasound2-dev libjack-jackd2-dev libpipewire-0.3-dev \
-            libgl1-mesa-dev libvulkan-dev vulkan-headers \
-            libx11-dev libxext-dev libxrandr-dev libxi-dev \
-            libxinerama-dev libxcursor-dev libwayland-dev \
-            libxkbcommon-dev libavcodec-dev libavformat-dev \
-            libavutil-dev libswscale-dev libswresample-dev
+      - name: Set up MSVC
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: amd64
+
+      - name: Set up vcpkg cache
+        uses: actions/github-script@v7
+        with:
+          script: |
+            core.exportVariable('ACTIONS_CACHE_URL', process.env.ACTIONS_CACHE_URL || '');
+            core.exportVariable('ACTIONS_RUNTIME_TOKEN', process.env.ACTIONS_RUNTIME_TOKEN || '');
 
       - name: Configure CMake
+        shell: pwsh
         run: |
-          cmake -S . -B build -G Ninja \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_C_COMPILER=clang \
-            -DCMAKE_CXX_COMPILER=clang++ \
-            -DENABLE_QT=OFF \
-            -DENABLE_SDL2=OFF \
-            -DENABLE_WEB_SERVICE=OFF \
-            -DYUZU_TESTS=OFF \
-            -DYUZU_ROOM=ON \
-            -DYUZU_USE_BUNDLED_VCPKG=OFF
+          cmake -S . -B build -G "Visual Studio 17 2022" -A x64 `
+            -DENABLE_QT=OFF `
+            -DENABLE_SDL2=ON `
+            -DENABLE_WEB_SERVICE=OFF `
+            -DYUZU_TESTS=OFF `
+            -DYUZU_ROOM=OFF `
+            -DYUZU_USE_BUNDLED_VCPKG=ON
 
-      - name: Compile
-        run: cmake --build build --parallel 2
+      - name: Build Release
+        shell: pwsh
+        run: cmake --build build --config Release --parallel 2
 
-      - name: Package build
-        if: success()
+      - name: Collect executables
+        shell: pwsh
         run: |
-          mkdir -p dist
-          find build -type f -executable ! -name '*.so' ! -name '*.a' \
-            ! -path '*/CMakeFiles/*' -exec cp --parents '{}' dist/ \;
-          tar -czf emusw-linux-build.tar.gz -C dist .
+          New-Item -ItemType Directory -Force dist | Out-Null
+          Get-ChildItem build -Recurse -File -Include *.exe,*.dll |
+            Where-Object { $_.FullName -match '[\\/]Release[\\/]' -and $_.FullName -notmatch '[\\/]CMakeFiles[\\/]' } |
+            Copy-Item -Destination dist -Force
+          if (-not (Get-ChildItem dist -Filter *.exe)) { throw 'No executable was generated.' }
 
-      - name: Upload build artifact
-        if: success()
+      - name: Upload Windows build
         uses: actions/upload-artifact@v4
         with:
-          name: emusw-linux
-          path: emusw-linux-build.tar.gz
+          name: emusw-windows-x64
+          path: dist/
+          if-no-files-found: error
           retention-days: 7
