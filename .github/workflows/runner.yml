@@ -54,6 +54,11 @@ jobs:
           foreach ($module in $modules) {
             git -C "$env:RUNNER_TEMP/yuzu-source" submodule update --init --depth 1 -- $module
             if ($LASTEXITCODE -ne 0) { throw "Unable to restore $module from archived submodule revision" }
+            if ($module -eq "externals/sirit") {
+              git -C "$env:RUNNER_TEMP/yuzu-source/$module" submodule update --init --recursive --depth 1
+              if ($LASTEXITCODE -ne 0) { throw "Unable to restore sirit nested SPIRV-Headers submodule" }
+              if (!(Test-Path "$env:RUNNER_TEMP/yuzu-source/$module/externals/SPIRV-Headers/CMakeLists.txt")) { throw "SPIRV-Headers CMakeLists.txt missing in sirit" }
+            }
             if ($module -eq "externals/cubeb") {
               git -C "$env:RUNNER_TEMP/yuzu-source/$module" submodule update --init --recursive --depth 1 -- cmake/sanitizers-cmake
               if ($LASTEXITCODE -ne 0) { throw "Unable to restore cubeb sanitizers-cmake nested submodule" }
