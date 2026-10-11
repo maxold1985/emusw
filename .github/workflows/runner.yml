@@ -15,7 +15,7 @@ jobs:
     runs-on: windows-2022
     timeout-minutes: 180
     env:
-      VCPKG_BINARY_SOURCES: "clear"
+      VCPKG_BINARY_SOURCES: "clear;files,${{ github.workspace }}/.vcpkg-binary-cache,readwrite"
     steps:
       - name: Checkout source
         uses: actions/checkout@v4
@@ -27,6 +27,14 @@ jobs:
         with:
           arch: amd64
 
+      - name: Restore vcpkg binary cache
+        uses: actions/cache@v4
+        with:
+          path: .vcpkg-binary-cache
+          key: vcpkg-windows-x64-${{ hashFiles('vcpkg.json', 'vcpkg-configuration.json') }}-${{ github.run_id }}
+          restore-keys: |
+            vcpkg-windows-x64-${{ hashFiles('vcpkg.json', 'vcpkg-configuration.json') }}-
+
       - name: Install vcpkg and NASM
         shell: pwsh
         run: |
@@ -35,11 +43,12 @@ jobs:
           git -C externals/vcpkg checkout a42af01b72c28a8e1d7b48107b33e4f286a55ef6
           & .\\externals\\vcpkg\\bootstrap-vcpkg.bat -disableMetrics
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          echo "$env:RUNNER_TEMP\\nasm" >> $env:GITHUB_PATH
+          if ($LASTEXITCODE -ne 0) { throw "vcpkg bootstrap failed" }
+          New-Item -ItemType Directory -Force .vcpkg-binary-cache | Out-Null
+          nasm -v
           if (!(Test-Path externals/vcpkg/scripts/buildsystems/vcpkg.cmake)) { throw "vcpkg toolchain missing" }
-          New-Item -ItemType Directory -Force externals/vcpkg/downloads | Out-Null
-          # Project uses an obsolete Yuzu-hosted NASM zip. Prevent the failed URL request.
-          New-Item -ItemType File -Force externals/vcpkg/downloads/nasm-2.16.01-win64.zip | Out-Null
+          # Do not create a fake NASM ZIP. Chocolatey installs the real executable.
+          # The obsolete optional NASM download in CMake may emit a warning.
 
       - name: Configure CMake
         shell: pwsh
