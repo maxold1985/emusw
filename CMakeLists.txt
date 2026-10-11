@@ -409,7 +409,7 @@ if(ENABLE_QT)
         set(QT_DEFAULT_MAJOR_VERSION 5)
         set(QT_MAJOR_VERSION 5)
 
-        set(YUZU_USE_QT_MULTIMEDIA ON)
+        # Respect YUZU_USE_QT_MULTIMEDIA for system-provided Qt builds.
         # Check for system Qt on Linux, fallback to bundled Qt
         if (UNIX AND NOT APPLE)
             if (NOT YUZU_USE_BUNDLED_QT)
