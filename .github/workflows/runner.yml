@@ -16,6 +16,7 @@ jobs:
     timeout-minutes: 180
     env:
       VCPKG_BINARY_SOURCES: "clear;files,${{ github.workspace }}/.vcpkg-binary-cache,readwrite"
+      VCPKG_KEEP_ENV_VARS: PKG_CONFIG
     steps:
       - name: Checkout source
         uses: actions/checkout@v4
@@ -79,6 +80,8 @@ jobs:
           & $pkgConfig --version
           if ($LASTEXITCODE -ne 0) { throw "pkg-config is not executable" }
           "PKG_CONFIG=$pkgConfig" >> $env:GITHUB_ENV
+          "VCPKG_KEEP_ENV_VARS=PKG_CONFIG" >> $env:GITHUB_ENV
+          Write-Host "pkg-config configured for vcpkg build environment: $pkgConfig"
 
       - name: Configure CMake
         shell: pwsh
