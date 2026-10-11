@@ -157,6 +157,7 @@ jobs:
             -DENABLE_SDL2=ON `
             -DYUZU_USE_BUNDLED_SDL2=OFF `
             -DENABLE_WEB_SERVICE=OFF `
+            -DYUZU_CHECK_SUBMODULES=OFF `
             -DYUZU_TESTS=OFF `
             -DYUZU_ROOM=OFF `
             -DYUZU_USE_BUNDLED_VCPKG=ON `
