@@ -45,7 +45,8 @@ jobs:
           )
           git -C "$env:RUNNER_TEMP/yuzu-source" config -f .gitmodules submodule.sirit.url https://github.com/ReinUsesLisp/sirit.git
           git -C "$env:RUNNER_TEMP/yuzu-source" config -f .gitmodules submodule.dynarmic.url https://github.com/azahar-emu/dynarmic.git
-          git -C "$env:RUNNER_TEMP/yuzu-source" submodule sync -- externals/sirit externals/dynarmic
+          git -C "$env:RUNNER_TEMP/yuzu-source" config -f .gitmodules submodule.mbedtls.url https://github.com/Mbed-TLS/mbedtls.git
+          git -C "$env:RUNNER_TEMP/yuzu-source" submodule sync -- externals/sirit externals/dynarmic externals/mbedtls
           foreach ($module in $modules) {
             git -C "$env:RUNNER_TEMP/yuzu-source" submodule update --init --depth 1 -- $module
             if ($LASTEXITCODE -ne 0) { throw "Unable to restore $module from archived submodule revision" }
