@@ -1,7 +1,6 @@
 {
     "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
     "name": "yuzu",
-    "builtin-baseline": "a42af01b72c28a8e1d7b48107b33e4f286a55ef6",
     "version": "1.0",
     "dependencies": [
         "boost-algorithm",
@@ -22,14 +21,6 @@
         "boost-test",
         "boost-timer",
         "boost-variant",
-        {
-            "name": "ffmpeg",
-            "features": [
-                "avcodec",
-                "avfilter",
-                "swscale"
-            ]
-        },
         "fmt",
         "lz4",
         "nlohmann-json",
