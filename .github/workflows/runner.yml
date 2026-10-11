@@ -63,7 +63,7 @@ jobs:
           $ErrorActionPreference = 'Stop'
           $archive = Join-Path $env:RUNNER_TEMP "glslang.zip"
           $folder = Join-Path $env:RUNNER_TEMP "glslang-tools"
-          Invoke-WebRequest "https://github.com/KhronosGroup/glslang/releases/download/master-tot/glslang-master-windows-Release.zip" -OutFile $archive
+          Invoke-WebRequest "https://github.com/KhronosGroup/glslang/releases/download/8.13.3559/glslang-master-windows-x64-Release.zip" -OutFile $archive
           Expand-Archive $archive -DestinationPath $folder -Force
           $validator = Get-ChildItem $folder -Filter glslangValidator.exe -Recurse -File | Select-Object -First 1 -ExpandProperty FullName
           if (-not $validator) { throw "glslangValidator.exe missing from release archive" }
