@@ -1,4 +1,4 @@
-name: Runner CI
+name: Build emusw (Linux)
 
 on:
   push:
@@ -11,18 +11,59 @@ permissions:
   contents: read
 
 jobs:
-  runner:
-    name: Ubuntu Runner
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
+  build-linux:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
     steps:
-      - name: Checkout repository
+      - name: Checkout source
         uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
-      - name: Runner information
+      - name: Install build dependencies
         run: |
-          echo "Runner OS: ${RUNNER_OS}"
-          uname -a
-          echo "Repository: ${GITHUB_REPOSITORY}"
-          echo "Commit: ${GITHUB_SHA}"
-          ls -la
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential cmake ninja-build git pkg-config \
+            clang lld nasm autoconf automake libtool \
+            libboost-all-dev libfmt-dev liblz4-dev libzstd-dev \
+            nlohmann-json3-dev zlib1g-dev libssl-dev \
+            libusb-1.0-0-dev libudev-dev libpulse-dev \
+            libasound2-dev libjack-jackd2-dev libpipewire-0.3-dev \
+            libgl1-mesa-dev libvulkan-dev vulkan-headers \
+            libx11-dev libxext-dev libxrandr-dev libxi-dev \
+            libxinerama-dev libxcursor-dev libwayland-dev \
+            libxkbcommon-dev libavcodec-dev libavformat-dev \
+            libavutil-dev libswscale-dev libswresample-dev
+
+      - name: Configure CMake
+        run: |
+          cmake -S . -B build -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_C_COMPILER=clang \
+            -DCMAKE_CXX_COMPILER=clang++ \
+            -DENABLE_QT=OFF \
+            -DENABLE_SDL2=OFF \
+            -DENABLE_WEB_SERVICE=OFF \
+            -DYUZU_TESTS=OFF \
+            -DYUZU_ROOM=ON \
+            -DYUZU_USE_BUNDLED_VCPKG=OFF
+
+      - name: Compile
+        run: cmake --build build --parallel 2
+
+      - name: Package build
+        if: success()
+        run: |
+          mkdir -p dist
+          find build -type f -executable ! -name '*.so' ! -name '*.a' \
+            ! -path '*/CMakeFiles/*' -exec cp --parents '{}' dist/ \;
+          tar -czf emusw-linux-build.tar.gz -C dist .
+
+      - name: Upload build artifact
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: emusw-linux
+          path: emusw-linux-build.tar.gz
+          retention-days: 7
