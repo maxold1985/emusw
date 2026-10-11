@@ -168,7 +168,9 @@ jobs:
         shell: pwsh
         run: |
           cmake -S . -B build -G "Visual Studio 17 2022" -A x64 `
-            -DENABLE_QT=OFF `
+            -DENABLE_QT=ON `
+            -DENABLE_QT6=OFF `
+            -DYUZU_USE_BUNDLED_QT=ON `
             -DENABLE_SDL2=ON `
             -DYUZU_USE_BUNDLED_SDL2=OFF `
             -DENABLE_WEB_SERVICE=OFF `
@@ -181,7 +183,9 @@ jobs:
 
       - name: Build Release
         shell: pwsh
-        run: cmake --build build --config Release --parallel 2
+        run: |
+          cmake --build build --config Release --parallel 2
+          if ($LASTEXITCODE -ne 0) { throw 'Release build failed' }
 
       - name: Save incremental CMake build cache
         if: always()
@@ -201,10 +205,17 @@ jobs:
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force dist | Out-Null
-          Get-ChildItem build -Recurse -File -Include *.exe,*.dll |
-            Where-Object { $_.FullName -match '[\\/]Release[\\/]' -and $_.FullName -notmatch '[\\/]CMakeFiles[\\/]' } |
-            Copy-Item -Destination dist -Force
-          if (-not (Get-ChildItem dist -Filter *.exe)) { throw 'No executable was generated.' }
+          $gui = Get-ChildItem build/src/yuzu -Recurse -Filter yuzu.exe -File |
+            Where-Object { $_.FullName -match '[\\/]Release[\\/]' } |
+            Select-Object -First 1
+          if (-not $gui) { throw 'Qt GUI executable yuzu.exe was not generated.' }
+          Copy-Item (Join-Path $gui.DirectoryName '*') -Destination dist -Recurse -Force
+          $cmd = Get-ChildItem build/src/yuzu_cmd -Recurse -Filter yuzu-cmd.exe -File -ErrorAction SilentlyContinue |
+            Where-Object { $_.FullName -match '[\\/]Release[\\/]' } |
+            Select-Object -First 1
+          if ($cmd) { Copy-Item $cmd.FullName -Destination dist -Force }
+          if (!(Test-Path dist/yuzu.exe)) { throw 'Qt frontend missing from distribution.' }
+          if (!(Test-Path dist/platforms/qwindows.dll)) { throw 'Qt Windows platform plugin qwindows.dll missing.' }
 
       - name: Upload Windows build
         uses: actions/upload-artifact@v4
