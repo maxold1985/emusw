@@ -11,7 +11,33 @@ if not "%~1"=="" set "JOBS=%~1"
 
 where cmake >nul 2>&1 || (echo [ERRO] Instale CMake e adicione ao PATH. & exit /b 1)
 where git >nul 2>&1 || (echo [ERRO] Instale Git para Windows. & exit /b 1)
-where nasm >nul 2>&1 || (echo [ERRO] Instale NASM e adicione ao PATH. & exit /b 1)
+where nasm >nul 2>&1
+if errorlevel 1 (
+  echo [INFO] NASM nao encontrado. Tentando instalar pelo winget...
+  where winget >nul 2>&1
+  if not errorlevel 1 (
+    winget install --id NASM.NASM --exact --accept-package-agreements --accept-source-agreements
+  ) else (
+    echo [INFO] winget indisponivel. Tentando Chocolatey...
+    where choco >nul 2>&1
+    if errorlevel 1 (
+      echo [ERRO] Instale NASM manualmente ou instale winget/Chocolatey.
+      exit /b 1
+    )
+    choco install nasm -y --no-progress
+  )
+  set "NASM_DIR="
+  if exist "%ProgramFiles%\NASM\nasm.exe" set "NASM_DIR=%ProgramFiles%\NASM"
+  if exist "%ProgramFiles(x86)%\NASM\nasm.exe" set "NASM_DIR=%ProgramFiles(x86)%\NASM"
+  if exist "C:\ProgramData\chocolatey\bin\nasm.exe" set "NASM_DIR=C:\ProgramData\chocolatey\bin"
+  if defined NASM_DIR set "PATH=%NASM_DIR%;%PATH%"
+  where nasm >nul 2>&1
+  if errorlevel 1 (
+    echo [ERRO] NASM nao encontrado apos instalacao. Abra um novo terminal ou verifique PATH.
+    exit /b 1
+  )
+)
+nasm -v
 where glslangValidator >nul 2>&1 || (echo [ERRO] Instale glslangValidator e adicione ao PATH. & exit /b 1)
 
 if not exist "%VCPKG_ROOT%\vcpkg.exe" (
