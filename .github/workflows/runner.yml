@@ -50,6 +50,11 @@ jobs:
           foreach ($module in $modules) {
             git -C "$env:RUNNER_TEMP/yuzu-source" submodule update --init --depth 1 -- $module
             if ($LASTEXITCODE -ne 0) { throw "Unable to restore $module from archived submodule revision" }
+            if ($module -eq "externals/cubeb") {
+              git -C "$env:RUNNER_TEMP/yuzu-source/$module" submodule update --init --recursive --depth 1 -- cmake/sanitizers-cmake
+              if ($LASTEXITCODE -ne 0) { throw "Unable to restore cubeb sanitizers-cmake nested submodule" }
+              if (!(Test-Path "$env:RUNNER_TEMP/yuzu-source/$module/cmake/sanitizers-cmake/cmake/FindSanitizers.cmake")) { throw "cubeb FindSanitizers.cmake missing after nested submodule checkout" }
+            }
             if (!(Test-Path "$env:RUNNER_TEMP/yuzu-source/$module/CMakeLists.txt") -and $module -notmatch 'simpleini|xbyak|tzdb_to_nx') {
               throw "Submodule missing CMakeLists.txt: $module"
             }
