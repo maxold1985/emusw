@@ -146,6 +146,16 @@ jobs:
           "VCPKG_KEEP_ENV_VARS=PKG_CONFIG" >> $env:GITHUB_ENV
           Write-Host "pkg-config configured for vcpkg build environment: $pkgConfig"
 
+      - name: Install FFmpeg development libraries
+        shell: pwsh
+        run: |
+          & .\\externals\\vcpkg\\vcpkg.exe install 'ffmpeg[avcodec,avfilter,swscale]:x64-windows'
+          if ($LASTEXITCODE -ne 0) { throw "FFmpeg installation failed" }
+          $ffmpegInclude = Join-Path (Get-Location) "externals/vcpkg/installed/x64-windows/include"
+          if (!(Test-Path (Join-Path $ffmpegInclude "libavcodec/avcodec.h"))) { throw "FFmpeg avcodec header missing" }
+          if (!(Test-Path (Join-Path $ffmpegInclude "libswscale/swscale.h"))) { throw "FFmpeg swscale header missing" }
+          "FFMPEG_DIR=$(Join-Path (Get-Location) 'externals/vcpkg/installed/x64-windows')" >> $env:GITHUB_ENV
+
       - name: Restore incremental CMake build cache
         uses: actions/cache/restore@v4
         with:
@@ -163,6 +173,7 @@ jobs:
             -DYUZU_USE_BUNDLED_SDL2=OFF `
             -DENABLE_WEB_SERVICE=OFF `
             -DYUZU_CHECK_SUBMODULES=OFF `
+            -DYUZU_USE_BUNDLED_FFMPEG=OFF `
             -DYUZU_TESTS=OFF `
             -DYUZU_ROOM=OFF `
             -DYUZU_USE_BUNDLED_VCPKG=ON `
