@@ -39,13 +39,24 @@ jobs:
         shell: pwsh
         run: |
           choco install nasm -y --no-progress
+          if ($LASTEXITCODE -ne 0) { throw "Chocolatey NASM installation failed" }
+          $nasmPaths = @(
+            "C:\\Program Files\\NASM\\nasm.exe",
+            "C:\\Program Files (x86)\\NASM\\nasm.exe",
+            "C:\\tools\\nasm\\nasm.exe",
+            "C:\\ProgramData\\chocolatey\\bin\\nasm.exe"
+          )
+          $nasmExe = $nasmPaths | Where-Object { Test-Path $_ } | Select-Object -First 1
+          if (-not $nasmExe) { throw "NASM executable not found after Chocolatey installation" }
+          $nasmDir = Split-Path $nasmExe -Parent
+          $env:PATH = "$nasmDir;$env:PATH"
+          $nasmDir >> $env:GITHUB_PATH
+          & $nasmExe -v
           git clone https://github.com/microsoft/vcpkg.git externals/vcpkg
           git -C externals/vcpkg checkout a42af01b72c28a8e1d7b48107b33e4f286a55ef6
           & .\\externals\\vcpkg\\bootstrap-vcpkg.bat -disableMetrics
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           if ($LASTEXITCODE -ne 0) { throw "vcpkg bootstrap failed" }
           New-Item -ItemType Directory -Force .vcpkg-binary-cache | Out-Null
-          nasm -v
           if (!(Test-Path externals/vcpkg/scripts/buildsystems/vcpkg.cmake)) { throw "vcpkg toolchain missing" }
           # Do not create a fake NASM ZIP. Chocolatey installs the real executable.
           # The obsolete optional NASM download in CMake may emit a warning.
