@@ -21,6 +21,14 @@
         "boost-test",
         "boost-timer",
         "boost-variant",
+        {
+            "name": "ffmpeg",
+            "features": [
+                "avcodec",
+                "avfilter",
+                "swscale"
+            ]
+        },
         "fmt",
         "lz4",
         "nlohmann-json",
@@ -64,5 +72,5 @@
             "version": "10.1.1"
         }
     ],
-    "builtin-baseline": "a42af01b72c28a8e1d7b48107b33e4f286a55ef6"
+    "builtin-baseline": "e456309491fd875487bf02b8a0dca76c1b1b00cc"
 }
