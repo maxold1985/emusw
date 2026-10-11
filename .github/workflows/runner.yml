@@ -149,7 +149,7 @@ jobs:
       - name: Install FFmpeg development libraries
         shell: pwsh
         run: |
-          & .\\externals\\vcpkg\\vcpkg.exe install 'ffmpeg[avcodec,avfilter,swscale]:x64-windows'
+          & .\\externals\\vcpkg\\vcpkg.exe install --triplet x64-windows
           if ($LASTEXITCODE -ne 0) { throw "FFmpeg installation failed" }
           $ffmpegInclude = Join-Path (Get-Location) "externals/vcpkg/installed/x64-windows/include"
           if (!(Test-Path (Join-Path $ffmpegInclude "libavcodec/avcodec.h"))) { throw "FFmpeg avcodec header missing" }
