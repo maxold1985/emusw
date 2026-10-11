@@ -31,16 +31,27 @@ nasm -v
 if errorlevel 1 exit /b 1
 where glslangValidator >nul 2>&1 || (echo [ERRO] Instale glslangValidator e adicione ao PATH. & exit /b 1)
 
-if not exist "%VCPKG_ROOT%\vcpkg.exe" (
-  if not exist "%VCPKG_ROOT%\bootstrap-vcpkg.bat" (
-    if exist "%VCPKG_ROOT%" (
-      echo [ERRO] externals\vcpkg existe mas nao contem bootstrap-vcpkg.bat
+rem O ZIP original do Yuzu pode conter externals\vcpkg vazio ou incompleto.
+rem Restaurar apenas este diretorio, sem apagar outras dependencias.
+if not exist "%VCPKG_ROOT%\bootstrap-vcpkg.bat" (
+  echo [INFO] vcpkg incompleto. Restaurando a partir do GitHub...
+  if exist "%VCPKG_ROOT%" (
+    ren "%VCPKG_ROOT%" "vcpkg-incomplete-%RANDOM%" >nul 2>&1
+    if errorlevel 1 (
+      echo [ERRO] Nao foi possivel renomear externals\vcpkg. Feche programas que utilizam a pasta.
       exit /b 1
     )
-    git clone https://github.com/microsoft/vcpkg.git "%VCPKG_ROOT%" || exit /b 1
-    git -C "%VCPKG_ROOT%" checkout e456309491fd875487bf02b8a0dca76c1b1b00cc || exit /b 1
   )
-  call "%VCPKG_ROOT%\bootstrap-vcpkg.bat" -disableMetrics || exit /b 1
+  git clone https://github.com/microsoft/vcpkg.git "%VCPKG_ROOT%"
+  if errorlevel 1 exit /b 1
+)
+git -C "%VCPKG_ROOT%" fetch origin e456309491fd875487bf02b8a0dca76c1b1b00cc
+if errorlevel 1 exit /b 1
+git -C "%VCPKG_ROOT%" checkout e456309491fd875487bf02b8a0dca76c1b1b00cc
+if errorlevel 1 exit /b 1
+if not exist "%VCPKG_ROOT%\vcpkg.exe" (
+  call "%VCPKG_ROOT%\bootstrap-vcpkg.bat" -disableMetrics
+  if errorlevel 1 exit /b 1
 )
 
 if not exist "externals\sirit\CMakeLists.txt" (
@@ -54,8 +65,6 @@ if not exist "externals\sirit\externals\SPIRV-Headers\CMakeLists.txt" (
   if errorlevel 1 exit /b 1
 )
 
-git -C "%VCPKG_ROOT%" fetch origin e456309491fd875487bf02b8a0dca76c1b1b00cc || exit /b 1
-  git -C "%VCPKG_ROOT%" checkout e456309491fd875487bf02b8a0dca76c1b1b00cc || exit /b 1
 if not exist ".vcpkg-binary-cache" mkdir ".vcpkg-binary-cache"
 echo [1/3] Instalando dependencias vcpkg do manifesto...
 "%VCPKG_ROOT%\vcpkg.exe" install --triplet x64-windows || exit /b 1
