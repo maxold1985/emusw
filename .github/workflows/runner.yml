@@ -156,6 +156,16 @@ jobs:
           if (!(Test-Path (Join-Path $ffmpegInclude "libswscale/swscale.h"))) { throw "FFmpeg swscale header missing" }
           "FFMPEG_DIR=$(Join-Path (Get-Location) 'vcpkg_installed/x64-windows')" >> $env:GITHUB_ENV
 
+      - name: Install Qt5 for MSVC 2022
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '5.15.2'
+          host: windows
+          target: desktop
+          arch: win64_msvc2019_64
+          modules: 'qtmultimedia'
+          cache: true
+
       - name: Restore incremental CMake build cache
         uses: actions/cache/restore@v4
         with:
@@ -170,7 +180,8 @@ jobs:
           cmake -S . -B build -G "Visual Studio 17 2022" -A x64 `
             -DENABLE_QT=ON `
             -DENABLE_QT6=OFF `
-            -DYUZU_USE_BUNDLED_QT=ON `
+            -DYUZU_USE_BUNDLED_QT=OFF `
+            -DCMAKE_PREFIX_PATH="$env:Qt5_DIR/../../.." `
             -DENABLE_SDL2=ON `
             -DYUZU_USE_BUNDLED_SDL2=OFF `
             -DENABLE_WEB_SERVICE=OFF `
@@ -180,6 +191,12 @@ jobs:
             -DYUZU_ROOM=OFF `
             -DYUZU_USE_BUNDLED_VCPKG=ON `
             -DCMAKE_POLICY_DEFAULT_CMP0167=OLD
+
+      - name: Verify Qt5 configuration
+        shell: pwsh
+        run: |
+          if (!(Test-Path "$env:Qt5_DIR/Qt5Config.cmake")) { throw "Qt5Config.cmake missing at $env:Qt5_DIR" }
+          Write-Host "Qt5 location: $env:Qt5_DIR"
 
       - name: Build Release
         shell: pwsh
@@ -215,6 +232,10 @@ jobs:
             Select-Object -First 1
           if ($cmd) { Copy-Item $cmd.FullName -Destination dist -Force }
           if (!(Test-Path dist/yuzu.exe)) { throw 'Qt frontend missing from distribution.' }
+          $deploy = Join-Path $env:QT_ROOT_DIR 'bin/windeployqt.exe'
+          if (!(Test-Path $deploy)) { throw "windeployqt.exe not found: $deploy" }
+          & $deploy --release --no-translations --no-compiler-runtime (Join-Path (Resolve-Path dist).Path 'yuzu.exe')
+          if ($LASTEXITCODE -ne 0) { throw 'windeployqt failed' }
           if (!(Test-Path dist/platforms/qwindows.dll)) { throw 'Qt Windows platform plugin qwindows.dll missing.' }
 
       - name: Upload Windows build
