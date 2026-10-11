@@ -11,33 +11,24 @@ if not "%~1"=="" set "JOBS=%~1"
 
 where cmake >nul 2>&1 || (echo [ERRO] Instale CMake e adicione ao PATH. & exit /b 1)
 where git >nul 2>&1 || (echo [ERRO] Instale Git para Windows. & exit /b 1)
+rem NASM portatil: nao requer winget, Chocolatey ou administrador.
+set "NASM_HOME=%ROOT%\\tools\\nasm"
+if exist "%NASM_HOME%\\nasm.exe" set "PATH=%NASM_HOME%;%PATH%"
 where nasm >nul 2>&1
 if errorlevel 1 (
-  echo [INFO] NASM nao encontrado. Tentando instalar pelo winget...
-  where winget >nul 2>&1
-  if not errorlevel 1 (
-    winget install --id NASM.NASM --exact --accept-package-agreements --accept-source-agreements
-  ) else (
-    echo [INFO] winget indisponivel. Tentando Chocolatey...
-    where choco >nul 2>&1
-    if errorlevel 1 (
-      echo [ERRO] Instale NASM manualmente ou instale winget/Chocolatey.
-      exit /b 1
-    )
-    choco install nasm -y --no-progress
-  )
-  set "NASM_DIR="
-  if exist "%ProgramFiles%\NASM\nasm.exe" set "NASM_DIR=%ProgramFiles%\NASM"
-  if exist "%ProgramFiles(x86)%\NASM\nasm.exe" set "NASM_DIR=%ProgramFiles(x86)%\NASM"
-  if exist "C:\ProgramData\chocolatey\bin\nasm.exe" set "NASM_DIR=C:\ProgramData\chocolatey\bin"
-  if defined NASM_DIR set "PATH=%NASM_DIR%;%PATH%"
-  where nasm >nul 2>&1
+  echo [INFO] Baixando NASM 2.16.03 portatil...
+  if not exist "%NASM_HOME%" mkdir "%NASM_HOME%"
+  powershell -NoProfile -ExecutionPolicy Bypass -Command "$ErrorActionPreference='Stop'; [Net.ServicePointManager]::SecurityProtocol=[Net.SecurityProtocolType]::Tls12; $zip=Join-Path $env:TEMP 'emusw-nasm-2.16.03.zip'; Invoke-WebRequest 'https://www.nasm.us/pub/nasm/releasebuilds/2.16.03/win64/nasm-2.16.03-win64.zip' -OutFile $zip; Expand-Archive -LiteralPath $zip -DestinationPath '%NASM_HOME%' -Force; Remove-Item $zip -Force; $exe=Get-ChildItem '%NASM_HOME%' -Filter nasm.exe -Recurse -File | Select-Object -First 1; if (-not $exe) { throw 'nasm.exe ausente no ZIP' }; Copy-Item -LiteralPath $exe.FullName -Destination '%NASM_HOME%\\nasm.exe' -Force"
   if errorlevel 1 (
-    echo [ERRO] NASM nao encontrado apos instalacao. Abra um novo terminal ou verifique PATH.
+    echo [ERRO] Nao foi possivel baixar ou extrair o NASM.
     exit /b 1
   )
+  set "PATH=%NASM_HOME%;%PATH%"
 )
+where nasm >nul 2>&1
+if errorlevel 1 (echo [ERRO] NASM nao encontrado no PATH. & exit /b 1)
 nasm -v
+if errorlevel 1 exit /b 1
 where glslangValidator >nul 2>&1 || (echo [ERRO] Instale glslangValidator e adicione ao PATH. & exit /b 1)
 
 if not exist "%VCPKG_ROOT%\vcpkg.exe" (
